@@ -1,0 +1,45 @@
+# ─── Netlify Cache-Control Headers ──────────────────────────────────────────
+# WHY THIS FILE EXISTS:
+#   Even with a correct service worker, the Netlify CDN can still serve a
+#   stale index.html to users whose browser has no SW yet (first visit, or
+#   after a SW unregister). These rules make the CDN itself behave correctly.
+#
+# Rules are matched top-to-bottom; more-specific paths are listed last so they
+# override the broad defaults.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Security headers applied to EVERY response ───────────────────────────────
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# ── HTML entry point ─────────────────────────────────────────────────────────
+# MUST NEVER be cached. After a deploy, browsers must fetch a fresh copy so
+# they reference the correct content-hashed JS/CSS filenames.
+/index.html
+  Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate
+  Pragma: no-cache
+  Expires: 0
+
+# ── Vite-generated hashed assets ─────────────────────────────────────────────
+# /assets/* filenames contain a SHA-based hash (e.g. index-B7dUjdwq.js).
+# The hash changes whenever the content changes, so these are immutable.
+# "immutable" tells browsers they NEVER need to revalidate even on reload.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# ── Service worker ────────────────────────────────────────────────────────────
+# The browser controls the SW lifecycle. If the CDN caches sw.js, the browser
+# may not pick up a new version for up to 24 hours (browser's built-in max).
+# no-store forces the browser to always fetch a fresh copy.
+/sw.js
+  Cache-Control: no-store, no-cache, must-revalidate
+  Pragma: no-cache
+  Expires: 0
+
+# ── Web manifest ─────────────────────────────────────────────────────────────
+# Short-lived so PWA metadata (name, icons) updates reasonably quickly.
+/manifest.json
+  Cache-Control: no-store, no-cache, must-revalidate

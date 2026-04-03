@@ -5,10 +5,15 @@ import {defineConfig, loadEnv} from 'vite';
 
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
+  // Build timestamp used as the app version — changes on every `vite build`
+  // so the console log in main.tsx always shows the actual deployed version.
+  const appVersion = new Date().toISOString();
   return {
     plugins: [react(), tailwindcss()],
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+      // Injected at compile time; referenced as __APP_VERSION__ in source.
+      __APP_VERSION__: JSON.stringify(appVersion),
     },
     build: {
       rollupOptions: {
