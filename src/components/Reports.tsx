@@ -246,7 +246,6 @@ export default function Reports({
               </div>
             </motion.div>
 
-
             {/* Hidden Thermal Receipt for Printing (Reports) */}
             <div
               className={cn(
