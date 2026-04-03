@@ -60,7 +60,7 @@ export default function App() {
   const defaultInventory: Inventory[] = [
     { type: 'Petrol', currentStock: 4500, capacity: 10000, unit: 'Liter' },
     { type: 'Diesel', currentStock: 2800, capacity: 10000, unit: 'Liter' },
-    { type: 'CNG', currentStock: 1200, capacity: 5000, unit: 'Liter' },
+    { type: 'CNG', currentStock: 1200, capacity: 5000, unit: 'Kg' },
     { type: 'Power', currentStock: 1500, capacity: 5000, unit: 'Liter' },
   ];
   const [inventory, setInventory] = useState<Inventory[]>(() => {
@@ -202,6 +202,7 @@ export default function App() {
   if (isLocked && (settings.adminPin || settings.operatorPin)) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+        <h1>hello</h1>
         <motion.div 
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
