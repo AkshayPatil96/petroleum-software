@@ -19,7 +19,7 @@ import Reports from './components/Reports';
 import SettingsView from './components/SettingsView';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'billing' | 'inventory' | 'reports' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'billing' | 'inventory' | 'reports' | 'settings'>('billing');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLocked, setIsLocked] = useState(true);
   const [pinInput, setPinInput] = useState('');
