@@ -248,8 +248,8 @@ export default function App() {
   };
 
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['Admin', 'Operator'] },
     { id: 'billing', label: 'Billing', icon: ReceiptIndianRupee, roles: ['Admin', 'Operator'] },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['Admin', 'Operator'] },
     { id: 'inventory', label: 'Fuel & Stock', icon: Fuel, roles: ['Admin'] },
     { id: 'reports', label: 'Reports', icon: History, roles: ['Admin'] },
     { id: 'settings', label: 'Settings', icon: SettingsIcon, roles: ['Admin'] },
@@ -258,7 +258,6 @@ export default function App() {
   if (isLocked && (settings.adminPin || settings.operatorPin)) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-        <h1>hello</h1>
         <motion.div 
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -335,7 +334,7 @@ export default function App() {
           <span className="font-bold text-xl text-white">shreyafuel</span>
         </div>
 
-        <nav className="px-4 space-y-1">
+        <nav className="px-4 space-y-1 pt-16 md:pt-0">
           {navItems.map((item) => (
             <button
               key={item.id}
