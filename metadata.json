@@ -1,0 +1,5 @@
+{
+  "name": "Shreya Petroleum",
+  "description": "Professional petrol pump management and billing software for Shreya Petroleum with real-time stock tracking and sales reports.",
+  "requestFramePermissions": ["bluetooth"]
+}
