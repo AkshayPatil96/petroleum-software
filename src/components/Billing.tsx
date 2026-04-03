@@ -13,6 +13,7 @@ import { cn, convertUnit, formatCurrency } from "../lib/utils";
 import Card from "./ui/Card";
 import Button from "./ui/Button";
 import ReceiptContent from "./ReceiptContent";
+
 export default function Billing({
   prices,
   onAddBill,
@@ -209,7 +210,7 @@ export default function Billing({
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">
                     {mode === "amount"
-                      ? "Enter Amount (₹)"
+                      ? `Enter Amount (₹) per ${selectedFuel === "CNG" ? "Kg" : "Liter"}`
                       : `Enter Quantity (${currentUnit})`}
                   </label>
                   <input
@@ -223,48 +224,6 @@ export default function Billing({
                     placeholder={mode === "amount" ? "0.00" : "0.000"}
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-xl font-bold"
                   />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">
-                    Output Unit (Receipt)
-                  </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(
-                      [
-                        {
-                          id: 1,
-                          name: "Liter",
-                          for: ["Petrol", "Diesel"],
-                        },
-                        {
-                          id: 2,
-                          name: "Kg",
-                          for: ["CNG"],
-                        },
-                        {
-                          id: 3,
-                          name: "Pcs",
-                          for: settings.customItems.map((i) => i.name),
-                        },
-                      ] as const
-                    ).map((u) => (
-                      <button
-                        key={u.id}
-                        type="button"
-                        onClick={() => setOutputUnit(u?.name || "Liter")}
-                        className={cn(
-                          "py-2 rounded-xl border font-medium transition-all text-xs disabled:cursor-not-allowed disabled:opacity-50",
-                          outputUnit === u?.name
-                            ? "bg-blue-600 text-white border-blue-600"
-                            : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50",
-                        )}
-                        // disabled={!u.for.includes(selectedFuel)}
-                      >
-                        {u.name}
-                      </button>
-                    ))}
-                  </div>
                 </div>
               </div>
 

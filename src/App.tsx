@@ -248,8 +248,8 @@ export default function App() {
   };
 
   const navItems = [
-    { id: 'billing', label: 'Billing', icon: ReceiptIndianRupee, roles: ['Admin', 'Operator'] },
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['Admin', 'Operator'] },
+    { id: 'billing', label: 'Billing', icon: ReceiptIndianRupee, roles: ['Admin', 'Operator'] },
     { id: 'inventory', label: 'Fuel & Stock', icon: Fuel, roles: ['Admin'] },
     { id: 'reports', label: 'Reports', icon: History, roles: ['Admin'] },
     { id: 'settings', label: 'Settings', icon: SettingsIcon, roles: ['Admin'] },
