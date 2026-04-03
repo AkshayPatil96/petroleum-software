@@ -10,13 +10,89 @@ import {
   Droplets
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import type { Bill, FuelPrice, Inventory, PumpSettings, UserRole } from './types';
+import type { Bill, FuelPrice, Inventory, ItemUnit, PumpSettings, UserRole } from './types';
 import { cn, convertUnit, safeLocalStorageGet, safeLocalStorageSet } from './lib/utils';
 import Billing from './components/Billing';
 import Dashboard from './components/Dashboard';
 import InventoryView from './components/InventoryView';
 import Reports from './components/Reports';
 import SettingsView from './components/SettingsView';
+
+// ─── Data Versioning ──────────────────────────────────────────────────────────
+// HOW TO USE: When you change any default value in DEFAULT_PRICES or
+// DEFAULT_INVENTORY, do two things:
+//   1. Bump DATA_VERSION by 1.
+//   2. Add a new entry in `migrations` for that version that patches the old
+//      saved data to match the new default.
+// The migration runs once per device and is then stored as the new version.
+// ──────────────────────────────────────────────────────────────────────────────
+const DATA_VERSION = 2;
+
+const DEFAULT_PRICES: FuelPrice[] = [
+  { type: 'Petrol', pricePerLiter: 104.50, lastUpdated: new Date().toISOString() },
+  { type: 'Diesel', pricePerLiter: 92.30, lastUpdated: new Date().toISOString() },
+  { type: 'CNG', pricePerLiter: 82.00, lastUpdated: new Date().toISOString() },
+  { type: 'Power', pricePerLiter: 108.20, lastUpdated: new Date().toISOString() },
+];
+
+const DEFAULT_INVENTORY: Inventory[] = [
+  { type: 'Petrol', currentStock: 4500, capacity: 10000, unit: 'Liter' },
+  { type: 'Diesel', currentStock: 2800, capacity: 10000, unit: 'Liter' },
+  { type: 'CNG', currentStock: 1200, capacity: 5000, unit: 'Kg' },
+  { type: 'Power', currentStock: 1500, capacity: 5000, unit: 'Liter' },
+];
+
+type MigrateData = { prices: FuelPrice[]; inventory: Inventory[] };
+type MigrationFn = (data: MigrateData) => MigrateData;
+
+const migrations: Record<number, MigrationFn> = {
+  // v2: CNG unit corrected from 'Liter' to 'Kg'
+  2: (data) => ({
+    ...data,
+    inventory: data.inventory.map((item) =>
+      item.type === 'CNG' && item.unit === 'Liter'
+        ? { ...item, unit: 'Kg' as ItemUnit }
+        : item
+    ),
+  }),
+};
+
+let _initCache: MigrateData | null = null;
+
+function initializeData(): MigrateData {
+  if (_initCache) return _initCache;
+
+  const storedVersion = safeLocalStorageGet<number>('data_version', 0);
+
+  let data: MigrateData = {
+    prices: safeLocalStorageGet<FuelPrice[]>('fuel_prices', DEFAULT_PRICES),
+    inventory: safeLocalStorageGet<Inventory[]>('fuel_inventory', DEFAULT_INVENTORY).map(
+      (item: any) => ({
+        ...item,
+        unit: item.unit === 'Liters' ? 'Liter' : (item.unit || 'Liter'),
+      })
+    ),
+  };
+
+  // Apply every pending migration in order
+  let version = storedVersion;
+  while (version < DATA_VERSION) {
+    version += 1;
+    if (migrations[version]) {
+      data = migrations[version](data);
+    }
+  }
+
+  // Persist migrated data and bump stored version (runs once per device)
+  if (storedVersion < DATA_VERSION) {
+    safeLocalStorageSet('fuel_prices', data.prices);
+    safeLocalStorageSet('fuel_inventory', data.inventory);
+    safeLocalStorageSet('data_version', DATA_VERSION);
+  }
+
+  _initCache = data;
+  return data;
+}
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'billing' | 'inventory' | 'reports' | 'settings'>('billing');
@@ -47,29 +123,9 @@ export default function App() {
   };
 
   // --- State ---
-  const defaultPrices: FuelPrice[] = [
-    { type: 'Petrol', pricePerLiter: 104.50, lastUpdated: new Date().toISOString() },
-    { type: 'Diesel', pricePerLiter: 92.30, lastUpdated: new Date().toISOString() },
-    { type: 'CNG', pricePerLiter: 82.00, lastUpdated: new Date().toISOString() },
-    { type: 'Power', pricePerLiter: 108.20, lastUpdated: new Date().toISOString() },
-  ];
-  const [prices, setPrices] = useState<FuelPrice[]>(() =>
-    safeLocalStorageGet('fuel_prices', defaultPrices)
-  );
+  const [prices, setPrices] = useState<FuelPrice[]>(() => initializeData().prices);
 
-  const defaultInventory: Inventory[] = [
-    { type: 'Petrol', currentStock: 4500, capacity: 10000, unit: 'Liter' },
-    { type: 'Diesel', currentStock: 2800, capacity: 10000, unit: 'Liter' },
-    { type: 'CNG', currentStock: 1200, capacity: 5000, unit: 'Kg' },
-    { type: 'Power', currentStock: 1500, capacity: 5000, unit: 'Liter' },
-  ];
-  const [inventory, setInventory] = useState<Inventory[]>(() => {
-    const saved = safeLocalStorageGet<Inventory[]>('fuel_inventory', defaultInventory);
-    return saved.map((item: any) => ({
-      ...item,
-      unit: item.unit === 'Liters' ? 'Liter' : (item.unit || 'Liter')
-    }));
-  });
+  const [inventory, setInventory] = useState<Inventory[]>(() => initializeData().inventory);
 
   const [bills, setBills] = useState<Bill[]>(() => {
     const saved = safeLocalStorageGet<any[]>('fuel_bills', []);
