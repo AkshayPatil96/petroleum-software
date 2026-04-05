@@ -398,7 +398,7 @@ export default function SettingsView({ settings, setSettings }: { settings: Pump
                     <div key={item.id} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl">
                       <div>
                         <p className="text-sm font-bold text-slate-900">{item.name}</p>
-                        <p className="text-[10px] text-slate-500">â‚¹{item.price.toFixed(2)} / {item.unit} â€¢ {item.category}</p>
+                        <p className="text-[10px] text-slate-500">₹{item.price.toFixed(2)} / {item.unit} â€¢ {item.category}</p>
                       </div>
                       <button 
                         type="button"

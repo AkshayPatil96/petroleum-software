@@ -192,7 +192,7 @@ export default function Billing({
                       </p>
                       <p className="text-xs font-bold mt-1">{p.type}</p>
                       <p className="text-sm font-bold mt-1">
-                        â‚¹{p.pricePerLiter.toFixed(2)}
+                        ₹{p.pricePerLiter.toFixed(2)}
                       </p>
                     </button>
                   ))}
@@ -213,7 +213,7 @@ export default function Billing({
                       </p>
                       <p className="text-xs font-bold mt-1">{item.name}</p>
                       <p className="text-sm font-bold mt-1">
-                        â‚¹{item.price.toFixed(2)}
+                        ₹{item.price.toFixed(2)}
                       </p>
                     </button>
                   ))}
@@ -224,7 +224,7 @@ export default function Billing({
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">
                     {mode === "amount"
-                      ? `Enter Amount (â‚¹) per ${selectedFuel === "CNG" ? "Kg" : "Liter"}`
+                      ? `Enter Amount (₹) per ${selectedFuel === "CNG" ? "Kg" : "Liter"}`
                       : `Enter Quantity (${currentUnit})`}
                   </label>
                   <input
@@ -373,7 +373,7 @@ export default function Billing({
               <div className="flex justify-between items-end">
                 <span className="text-slate-400">Price / {currentUnit}</span>
                 <span className="text-xl font-bold">
-                  â‚¹{currentPrice.toFixed(2)}
+                  ₹{currentPrice.toFixed(2)}
                 </span>
               </div>
               <div className="h-px bg-slate-800 my-2" />
