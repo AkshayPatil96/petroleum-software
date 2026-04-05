@@ -58,6 +58,7 @@ export interface PumpSettings {
   printerSize: '58mm' | '80mm';
   logoUrl?: string;
   pairedPrinterName?: string;
+  pairedPrinterAddress?: string;
   licenseNo?: string;
   defaultFooterNote?: string;
   receiptTemplate: 'Standard' | 'Compact' | 'Modern';

@@ -1,9 +1,13 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Printer, Search, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { format } from "date-fns";
 import type { Bill, PumpSettings } from "../types";
 import { cn, formatCurrency } from "../lib/utils";
+import {
+  isNativeBluetoothSupported,
+  printBillToBluetooth,
+} from "../lib/bluetoothPrinter";
 import Card from "./ui/Card";
 import Button from "./ui/Button";
 import ReceiptContent from "./ReceiptContent";
@@ -232,7 +236,17 @@ export default function Reports({
                   </Button>
                   <Button
                     className="flex-1 flex items-center justify-center"
-                    onClick={() => {
+                    onClick={async () => {
+                      if (isNativeBluetoothSupported() && settings.pairedPrinterAddress) {
+                        try {
+                          await printBillToBluetooth(selectedBill, settings, settings.pairedPrinterAddress);
+                        } catch (error) {
+                          console.error("Native print error:", error);
+                          alert(`Print failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+                        }
+                        return;
+                      }
+
                       window.print();
                     }}
                   >
@@ -354,3 +368,5 @@ export default function Reports({
     </div>
   );
 }
+
+

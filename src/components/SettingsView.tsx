@@ -1,13 +1,24 @@
-import { useState, type ChangeEvent, type FormEvent } from 'react';
+﻿import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { Bluetooth, Fuel, Printer, Trash2 } from 'lucide-react';
 import type { PumpSettings } from '../types';
 import { cn } from '../lib/utils';
+import {
+  connectNativePrinter,
+  discoverNativePrinters,
+  isNativeBluetoothSupported,
+  sendTestPrint,
+  type NativePrinterDevice
+} from '../lib/bluetoothPrinter';
 import Card from './ui/Card';
 import Button from './ui/Button';
 export default function SettingsView({ settings, setSettings }: { settings: PumpSettings, setSettings: any }) {
   const [formData, setFormData] = useState(settings);
   const [isScanning, setIsScanning] = useState(false);
   const [saved, setSaved] = useState(false);
+  const isNativeBluetooth = isNativeBluetoothSupported();
+  const isPrinterConfigured = isNativeBluetooth
+    ? Boolean(formData.pairedPrinterAddress)
+    : Boolean(formData.pairedPrinterName);
 
   const handleSave = (e: FormEvent) => {
     e.preventDefault();
@@ -27,7 +38,55 @@ export default function SettingsView({ settings, setSettings }: { settings: Pump
     }
   };
 
+  const pickPrinter = (printers: NativePrinterDevice[]) => {
+    if (printers.length === 0) return null;
+    if (printers.length === 1) return printers[0];
+
+    const options = printers
+      .map((printer, index) => `${index + 1}. ${printer.name} (${printer.address})`)
+      .join('\n');
+
+    const selected = prompt(`Select a printer number:\n${options}`);
+    const selectedIndex = Number(selected) - 1;
+    if (!Number.isInteger(selectedIndex) || selectedIndex < 0 || selectedIndex >= printers.length) {
+      return null;
+    }
+
+    return printers[selectedIndex];
+  };
+
   const pairPrinter = async () => {
+    if (isNativeBluetooth) {
+      setIsScanning(true);
+      try {
+        const discoveredPrinters = await discoverNativePrinters();
+        if (!discoveredPrinters.length) {
+          alert('No Bluetooth printers found. Turn on the printer, keep it nearby, and retry.');
+          return;
+        }
+
+        const selectedPrinter = pickPrinter(discoveredPrinters);
+        if (!selectedPrinter) {
+          alert('Printer selection cancelled.');
+          return;
+        }
+
+        await connectNativePrinter(selectedPrinter.address, true);
+        setFormData((prev: PumpSettings) => ({
+          ...prev,
+          pairedPrinterName: selectedPrinter.name,
+          pairedPrinterAddress: selectedPrinter.address
+        }));
+        alert(`Connected to ${selectedPrinter.name} (${selectedPrinter.address})`);
+      } catch (error) {
+        console.error('Native Bluetooth error:', error);
+        alert(`Failed to connect printer: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      } finally {
+        setIsScanning(false);
+      }
+      return;
+    }
+
     const nav = navigator as any;
     if (!nav.bluetooth) {
       alert('Bluetooth is not supported in this browser or environment. Please use Chrome/Edge and ensure you are on HTTPS.');
@@ -54,7 +113,11 @@ export default function SettingsView({ settings, setSettings }: { settings: Pump
       });
 
       if (device) {
-        setFormData({ ...formData, pairedPrinterName: device.name || 'Unknown Printer' });
+        setFormData({
+          ...formData,
+          pairedPrinterName: device.name || 'Unknown Printer',
+          pairedPrinterAddress: undefined
+        });
         alert(`Successfully discovered and paired with ${device.name || 'Unknown Printer'}`);
       }
     } catch (error) {
@@ -68,15 +131,27 @@ export default function SettingsView({ settings, setSettings }: { settings: Pump
   };
 
   const forgetPrinter = () => {
-    setFormData({ ...formData, pairedPrinterName: undefined });
+    setFormData({ ...formData, pairedPrinterName: undefined, pairedPrinterAddress: undefined });
   };
 
-  const testPrint = () => {
-    if (!formData.pairedPrinterName) {
+  const testPrint = async () => {
+    if (!isPrinterConfigured) {
       alert('Please pair a printer first.');
       return;
     }
-    alert(`Sending test print to ${formData.pairedPrinterName}... (In a real environment, this would send ESC/POS commands via Bluetooth)`);
+
+    if (isNativeBluetooth && formData.pairedPrinterAddress) {
+      try {
+        await sendTestPrint(formData, formData.pairedPrinterAddress, formData.pairedPrinterName);
+        alert(`Test receipt sent to ${formData.pairedPrinterName || formData.pairedPrinterAddress}`);
+      } catch (error) {
+        console.error('Test print error:', error);
+        alert(`Test print failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+      return;
+    }
+
+    alert(`Sending test print to ${formData.pairedPrinterName}... (Web mode simulation)`);
   };
 
   return (
@@ -206,9 +281,9 @@ export default function SettingsView({ settings, setSettings }: { settings: Pump
               <h3 className="font-bold text-slate-900">Bluetooth Printer Discovery</h3>
               <div className={cn(
                 "px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                formData.pairedPrinterName ? "bg-emerald-100 text-emerald-600" : "bg-slate-200 text-slate-500"
+                isPrinterConfigured ? "bg-emerald-100 text-emerald-600" : "bg-slate-200 text-slate-500"
               )}>
-                {formData.pairedPrinterName ? 'Connected' : 'Disconnected'}
+                {isPrinterConfigured ? 'Connected' : 'Disconnected'}
               </div>
             </div>
 
@@ -216,38 +291,38 @@ export default function SettingsView({ settings, setSettings }: { settings: Pump
               <div className={cn(
                 "p-3 rounded-full transition-all",
                 isScanning ? "bg-blue-100 text-blue-600 animate-pulse" : 
-                formData.pairedPrinterName ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-400"
+                isPrinterConfigured ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-400"
               )}>
                 <Bluetooth size={24} />
               </div>
               <div className="flex-1">
                 <h4 className="font-bold text-sm">
                   {isScanning ? 'Scanning for nearby printers...' : 
-                   formData.pairedPrinterName ? formData.pairedPrinterName : 'No printer paired'}
+                   isPrinterConfigured ? (formData.pairedPrinterName || formData.pairedPrinterAddress) : 'No printer paired'}
                 </h4>
                 <p className="text-xs text-slate-500">
                   {isScanning ? 'Please wait while we search...' : 
-                   formData.pairedPrinterName ? 'Ready to print receipts' : 'Scan to discover nearby thermal printers'}
+                   isPrinterConfigured ? 'Ready to print receipts' : 'Scan to discover nearby thermal printers'}
                 </p>
               </div>
               <div className="flex gap-2">
-                {formData.pairedPrinterName && !isScanning && (
+                {isPrinterConfigured && !isScanning && (
                   <Button variant="outline" onClick={forgetPrinter} className="text-xs py-1 px-3 border-red-200 text-red-500 hover:bg-red-50">
                     Forget
                   </Button>
                 )}
                 <Button 
-                  variant={formData.pairedPrinterName ? "secondary" : "primary"} 
+                  variant={isPrinterConfigured ? "secondary" : "primary"} 
                   onClick={pairPrinter} 
                   disabled={isScanning}
                   className="text-xs py-1 px-3"
                 >
-                  {isScanning ? 'Scanning...' : formData.pairedPrinterName ? 'Scan Again' : 'Scan & Discover'}
+                  {isScanning ? 'Scanning...' : isPrinterConfigured ? 'Scan Again' : 'Scan & Discover'}
                 </Button>
               </div>
             </div>
 
-            {formData.pairedPrinterName && (
+            {isPrinterConfigured && (
               <div className="flex gap-2 pt-2">
                 <Button variant="outline" onClick={testPrint} className="flex-1 text-xs py-2">
                   <Printer size={14} className="mr-2" />
@@ -256,7 +331,7 @@ export default function SettingsView({ settings, setSettings }: { settings: Pump
               </div>
             )}
 
-            {!(navigator as any).bluetooth && (
+            {!isNativeBluetooth && !(navigator as any).bluetooth && (
               <p className="text-[10px] text-amber-600 font-medium bg-amber-50 p-2 rounded-lg border border-amber-100">
                 Note: Web Bluetooth discovery is restricted in this environment. Please ensure you are using a compatible browser (Chrome/Edge) and the app is served over HTTPS.
               </p>
@@ -323,7 +398,7 @@ export default function SettingsView({ settings, setSettings }: { settings: Pump
                     <div key={item.id} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl">
                       <div>
                         <p className="text-sm font-bold text-slate-900">{item.name}</p>
-                        <p className="text-[10px] text-slate-500">₹{item.price.toFixed(2)} / {item.unit} • {item.category}</p>
+                        <p className="text-[10px] text-slate-500">â‚¹{item.price.toFixed(2)} / {item.unit} â€¢ {item.category}</p>
                       </div>
                       <button 
                         type="button"
@@ -450,7 +525,7 @@ export default function SettingsView({ settings, setSettings }: { settings: Pump
 
           <div className="pt-4 flex gap-3 items-center">
             <Button type="submit" className="flex-1">
-              {saved ? '✓ Saved!' : 'Save Configuration'}
+              {saved ? 'âœ“ Saved!' : 'Save Configuration'}
             </Button>
             <Button variant="outline" onClick={() => setFormData(settings)}>Reset</Button>
           </div>
@@ -472,4 +547,8 @@ export default function SettingsView({ settings, setSettings }: { settings: Pump
     </div>
   );
 }
+
+
+
+
 

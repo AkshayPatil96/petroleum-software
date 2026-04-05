@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { AlertTriangle, Bluetooth, ReceiptIndianRupee } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { format } from "date-fns";
@@ -10,6 +10,10 @@ import type {
   PumpSettings,
 } from "../types";
 import { cn, convertUnit, formatCurrency } from "../lib/utils";
+import {
+  isNativeBluetoothSupported,
+  printBillToBluetooth,
+} from "../lib/bluetoothPrinter";
 import Card from "./ui/Card";
 import Button from "./ui/Button";
 import ReceiptContent from "./ReceiptContent";
@@ -73,7 +77,7 @@ export default function Billing({
     settings.unitConversions,
   );
 
-  const handleSubmit = (status: "Draft" | "Paid", shouldPrint: boolean) => {
+  const handleSubmit = async (status: "Draft" | "Paid", shouldPrint: boolean) => {
     if (!inputValue || parseFloat(inputValue) <= 0) return;
 
     const billId = `BILL-${Date.now()}`;
@@ -100,10 +104,20 @@ export default function Billing({
     setShowReceipt(billData as Bill);
 
     if (shouldPrint) {
-      setTimeout(() => {
-        window.print();
-        setShowReceipt(null);
-      }, 500);
+      if (isNativeBluetoothSupported() && settings.pairedPrinterAddress) {
+        try {
+          await printBillToBluetooth(billData as Bill, settings, settings.pairedPrinterAddress);
+          setShowReceipt(null);
+        } catch (error) {
+          console.error("Native print error:", error);
+          alert(`Print failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+        }
+      } else {
+        setTimeout(() => {
+          window.print();
+          setShowReceipt(null);
+        }, 500);
+      }
     }
 
     // Reset form
@@ -178,7 +192,7 @@ export default function Billing({
                       </p>
                       <p className="text-xs font-bold mt-1">{p.type}</p>
                       <p className="text-sm font-bold mt-1">
-                        ₹{p.pricePerLiter.toFixed(2)}
+                        â‚¹{p.pricePerLiter.toFixed(2)}
                       </p>
                     </button>
                   ))}
@@ -199,7 +213,7 @@ export default function Billing({
                       </p>
                       <p className="text-xs font-bold mt-1">{item.name}</p>
                       <p className="text-sm font-bold mt-1">
-                        ₹{item.price.toFixed(2)}
+                        â‚¹{item.price.toFixed(2)}
                       </p>
                     </button>
                   ))}
@@ -210,7 +224,7 @@ export default function Billing({
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-700">
                     {mode === "amount"
-                      ? `Enter Amount (₹) per ${selectedFuel === "CNG" ? "Kg" : "Liter"}`
+                      ? `Enter Amount (â‚¹) per ${selectedFuel === "CNG" ? "Kg" : "Liter"}`
                       : `Enter Quantity (${currentUnit})`}
                   </label>
                   <input
@@ -344,7 +358,7 @@ export default function Billing({
               <h3 className="text-slate-400 text-sm font-bold uppercase tracking-widest">
                 Summary
               </h3>
-              {settings.pairedPrinterName && (
+              {(settings.pairedPrinterAddress || settings.pairedPrinterName) && (
                 <div className="flex items-center gap-1.5 text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full border border-emerald-500/30">
                   <Bluetooth size={10} />
                   <span>Printer Ready</span>
@@ -359,7 +373,7 @@ export default function Billing({
               <div className="flex justify-between items-end">
                 <span className="text-slate-400">Price / {currentUnit}</span>
                 <span className="text-xl font-bold">
-                  ₹{currentPrice.toFixed(2)}
+                  â‚¹{currentPrice.toFixed(2)}
                 </span>
               </div>
               <div className="h-px bg-slate-800 my-2" />
@@ -464,7 +478,18 @@ export default function Billing({
                   </Button>
                   <Button
                     className="flex-1"
-                    onClick={() => {
+                    onClick={async () => {
+                      if (isNativeBluetoothSupported() && settings.pairedPrinterAddress) {
+                        try {
+                          await printBillToBluetooth(showReceipt, settings, settings.pairedPrinterAddress);
+                          setShowReceipt(null);
+                        } catch (error) {
+                          console.error("Native print error:", error);
+                          alert(`Print failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+                        }
+                        return;
+                      }
+
                       window.print();
                       setShowReceipt(null);
                     }}
@@ -582,3 +607,5 @@ export default function Billing({
     </div>
   );
 }
+
+

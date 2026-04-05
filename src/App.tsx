@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import {
   LayoutDashboard,
   Fuel,
@@ -18,14 +18,14 @@ import InventoryView from './components/InventoryView';
 import Reports from './components/Reports';
 import SettingsView from './components/SettingsView';
 
-// ─── Data Versioning ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Data Versioning â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // HOW TO USE: When you change any default value in DEFAULT_PRICES or
 // DEFAULT_INVENTORY, do two things:
 //   1. Bump DATA_VERSION by 1.
 //   2. Add a new entry in `migrations` for that version that patches the old
 //      saved data to match the new default.
 // The migration runs once per device and is then stored as the new version.
-// ──────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const DATA_VERSION = 2;
 
 const DEFAULT_PRICES: FuelPrice[] = [
@@ -146,6 +146,8 @@ export default function App() {
       operatorPin: '2222',
       printerSize: '58mm',
       logoUrl: '',
+      pairedPrinterName: '',
+      pairedPrinterAddress: '',
       licenseNo: '',
       defaultFooterNote: 'THANK YOU! HAVE A SAFE DRIVE',
       receiptTemplate: 'Standard',
@@ -432,3 +434,5 @@ export default function App() {
     </div>
   );
 }
+
+
