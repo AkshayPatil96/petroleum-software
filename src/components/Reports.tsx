@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Printer, Search, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { format } from "date-fns";
@@ -14,9 +14,11 @@ import ReceiptContent from "./ReceiptContent";
 export default function Reports({
   bills,
   settings,
+  onDeleteBill,
 }: {
   bills: Bill[];
   settings: PumpSettings;
+  onDeleteBill: (billId: string) => void;
 }) {
   const [filter, setFilter] = useState<"today" | "week" | "month">("today");
   const [searchTerm, setSearchTerm] = useState("");
@@ -52,6 +54,19 @@ export default function Reports({
 
   const totalAmount = filteredBills.reduce((acc, b) => acc + b.totalAmount, 0);
   const totalQuantity = filteredBills.reduce((acc, b) => acc + b.quantity, 0);
+
+  const handleDeleteDraft = (bill: Bill) => {
+    if (bill.status !== "Draft") return;
+    const confirmed = window.confirm(
+      `Delete draft report ${bill.id}? This action cannot be undone.`,
+    );
+    if (!confirmed) return;
+
+    if (selectedBill?.id === bill.id) {
+      setSelectedBill(null);
+    }
+    onDeleteBill(bill.id);
+  };
 
   return (
     <div className="space-y-6">
@@ -175,13 +190,30 @@ export default function Reports({
                       {formatCurrency(bill.totalAmount)}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <Button
-                        variant="outline"
-                        onClick={() => setSelectedBill(bill)}
-                        className="text-xs h-8 px-3"
-                      >
-                        Details
-                      </Button>
+                      <div className="flex items-center justify-end gap-2">
+                        {bill.status === "Draft" && (
+                          <Button
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteDraft(bill);
+                            }}
+                            className="text-xs h-8 px-3 text-red-600 border-red-200 hover:bg-red-50"
+                          >
+                            Delete
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedBill(bill);
+                          }}
+                          className="text-xs h-8 px-3"
+                        >
+                          Details
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -368,5 +400,3 @@ export default function Reports({
     </div>
   );
 }
-
-

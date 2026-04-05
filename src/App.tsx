@@ -249,6 +249,33 @@ export default function App() {
     }));
   };
 
+  const deleteBill = (billId: string) => {
+    const billToDelete = bills.find((bill) => bill.id === billId);
+    if (!billToDelete) return;
+
+    setBills((prev) => prev.filter((bill) => bill.id !== billId));
+
+    if (billToDelete.status === 'Draft') {
+      setInventory((prev) =>
+        prev.map((item) => {
+          if (item.type !== billToDelete.fuelType) return item;
+
+          const quantityInBaseUnit = convertUnit(
+            billToDelete.quantity,
+            billToDelete.unit,
+            item.unit,
+            settings.unitConversions
+          );
+
+          return {
+            ...item,
+            currentStock: Math.min(item.capacity, item.currentStock + quantityInBaseUnit),
+          };
+        })
+      );
+    }
+  };
+
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['Admin', 'Operator'] },
     { id: 'billing', label: 'Billing', icon: ReceiptIndianRupee, roles: ['Admin', 'Operator'] },
@@ -423,7 +450,7 @@ export default function App() {
               />
             )}
             {activeTab === 'reports' && (
-              <Reports bills={bills} settings={settings} />
+              <Reports bills={bills} settings={settings} onDeleteBill={deleteBill} />
             )}
             {activeTab === 'settings' && (
               <SettingsView settings={settings} setSettings={setSettings} />

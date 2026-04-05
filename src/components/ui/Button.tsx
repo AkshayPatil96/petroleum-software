@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { MouseEventHandler, ReactNode } from 'react';
 import { cn } from '../../lib/utils';
 const Button = ({ 
   children, 
@@ -9,7 +9,7 @@ const Button = ({
   type = 'button'
 }: { 
   children: ReactNode; 
-  onClick?: () => void; 
+  onClick?: MouseEventHandler<HTMLButtonElement>; 
   variant?: 'primary' | 'secondary' | 'outline' | 'danger';
   className?: string;
   disabled?: boolean;
